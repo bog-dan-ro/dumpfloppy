@@ -1,7 +1,7 @@
 /*
     dumpfloppy: read a floppy disk using the PC controller
 
-    Copyright (C) 2013 Adam Sampson <ats@offog.org>
+    Copyright (C) 2013, 2019 Adam Sampson <ats@offog.org>
 
     Permission to use, copy, modify, and/or distribute this software for
     any purpose with or without fee is hereby granted, provided that the
@@ -44,6 +44,7 @@
 
 static struct args {
     bool always_probe;
+    bool no_reprobe;
     int drive;
     int tracks;
     int cyl_scale;
@@ -579,7 +580,7 @@ static void process_floppy(void) {
                     break;
                 }
 
-                if (track->status == TRACK_GUESSED) {
+                if (track->status == TRACK_GUESSED && !args.no_reprobe) {
                     // Maybe we guessed wrong. Probe and try again.
                     track->status = TRACK_UNKNOWN;
                 }
@@ -602,6 +603,7 @@ static void process_floppy(void) {
 static void usage(void) {
     fprintf(stderr, "usage: dumpfloppy [OPTION]... [IMAGE-FILE]\n");
     fprintf(stderr, "  -a         probe each track before reading\n");
+    fprintf(stderr, "  -A         don't re-probe on error\n");
     fprintf(stderr, "  -d NUM     drive number to read from (default 0)\n");
     fprintf(stderr, "  -t TRACKS  drive has TRACKS tracks (default autodetect)\n");
     fprintf(stderr, "  -C         read comment from stdin\n");
@@ -612,6 +614,7 @@ static void usage(void) {
 int main(int argc, char **argv) {
     dev_fd = -1;
     args.always_probe = false;
+    args.no_reprobe = false;
     args.drive = 0;
     args.tracks = -1;
     args.cyl_scale = 1;
@@ -620,12 +623,15 @@ int main(int argc, char **argv) {
     args.image_filename = NULL;
 
     while (true) {
-        int opt = getopt(argc, argv, "ad:t:CS:");
+        int opt = getopt(argc, argv, "aAd:t:CS:");
         if (opt == -1) break;
 
         switch (opt) {
         case 'a':
             args.always_probe = true;
+            break;
+        case 'A':
+            args.no_reprobe = true;
             break;
         case 'd':
             args.drive = atoi(optarg);

@@ -1,7 +1,7 @@
 /*
     show.c: print summaries of disk contents
 
-    Copyright (C) 2013 Adam Sampson <ats@offog.org>
+    Copyright (C) 2013, 2019 Adam Sampson <ats@offog.org>
 
     Permission to use, copy, modify, and/or distribute this software for
     any purpose with or without fee is hereby granted, provided that the
@@ -21,6 +21,7 @@
 #include "disk.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 void show_mode(const data_mode_t *mode, FILE *out) {
     if (mode == NULL) {
@@ -60,14 +61,32 @@ void show_track(const track_t *track, FILE *out) {
     }
 }
 
+static int cmp_log_sector(const void *left_v, const void *right_v) {
+    const sector_t *left = *(const sector_t **) left_v;
+    const sector_t *right = *(const sector_t **) right_v;
+
+    int d = left->log_sector - right->log_sector;
+    if (d != 0) return d;
+
+    return left->phys_sector - right->phys_sector;
+}
+
 void show_track_data(const track_t *track, FILE *out) {
-    for (int phys_sec = 0; phys_sec < track->num_sectors; phys_sec++) {
-        const sector_t *sector = &track->sectors[phys_sec];
+    // Sort list of sectors into logical sector order.
+    const sector_t *sectors[MAX_SECS];
+    const int num_sectors = track->num_sectors;
+    for (int i = 0; i < num_sectors; i++) {
+        sectors[i] = &track->sectors[i];
+    }
+    qsort(sectors, num_sectors, sizeof(*sectors), cmp_log_sector);
+
+    for (int sec = 0; sec < num_sectors; sec++) {
+        const sector_t *sector = sectors[sec];
         if (sector->status == SECTOR_MISSING) continue;
 
         const int data_len = sector_bytes(track->sector_size_code);
         fprintf(out, "Physical C %d H %d S %d, logical C %d H %d S %d",
-                track->phys_cyl, track->phys_head, phys_sec,
+                track->phys_cyl, track->phys_head, sector->phys_sector,
                 sector->log_cyl, sector->log_head, sector->log_sector);
         if (sector->status == SECTOR_BAD) {
             fprintf(out, " (bad data)");

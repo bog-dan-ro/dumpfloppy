@@ -45,6 +45,7 @@
 static struct args {
     bool always_probe;
     bool no_reprobe;
+    int max_tries;
     int drive;
     int tracks;
     int cyl_scale;
@@ -567,10 +568,8 @@ static void process_floppy(void) {
                 copy_track_layout(&disk, &(disk.tracks[cyl - 1][head]), track);
             }
 
-            // FIXME: option for this
-            const int max_tries = 10;
             for (int try = 0; ; try++) {
-                if (try == max_tries) {
+                if (try == args.max_tries) {
                     // Tried too many times; give up.
                     break;
                 }
@@ -604,6 +603,7 @@ static void usage(void) {
     fprintf(stderr, "usage: dumpfloppy [OPTION]... [IMAGE-FILE]\n");
     fprintf(stderr, "  -a         probe each track before reading\n");
     fprintf(stderr, "  -A         don't re-probe on error\n");
+    fprintf(stderr, "  -r NUM     on failure, reread up to NUM times (default 10)\n");
     fprintf(stderr, "  -d NUM     drive number to read from (default 0)\n");
     fprintf(stderr, "  -t TRACKS  drive has TRACKS tracks (default autodetect)\n");
     fprintf(stderr, "  -C         read comment from stdin\n");
@@ -615,6 +615,7 @@ int main(int argc, char **argv) {
     dev_fd = -1;
     args.always_probe = false;
     args.no_reprobe = false;
+    args.max_tries = 10;
     args.drive = 0;
     args.tracks = -1;
     args.cyl_scale = 1;
@@ -623,7 +624,7 @@ int main(int argc, char **argv) {
     args.image_filename = NULL;
 
     while (true) {
-        int opt = getopt(argc, argv, "aAd:t:CS:");
+        int opt = getopt(argc, argv, "aAr:d:t:CS:");
         if (opt == -1) break;
 
         switch (opt) {
@@ -632,6 +633,9 @@ int main(int argc, char **argv) {
             break;
         case 'A':
             args.no_reprobe = true;
+            break;
+        case 'r':
+            args.max_tries = atoi(optarg);
             break;
         case 'd':
             args.drive = atoi(optarg);

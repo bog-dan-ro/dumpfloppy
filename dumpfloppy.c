@@ -46,6 +46,7 @@ static struct args {
     bool always_probe;
     bool no_reprobe;
     int max_tries;
+    int recalibrate_tries;
     int drive;
     int tracks;
     int cyl_scale;
@@ -554,7 +555,6 @@ static void process_floppy(void) {
     }
 
     // FIXME: retry disk if not complete -- option for number of retries
-    // FIXME: if retrying, ensure we've moved the head across the disk
     // FIXME: if retrying, turn the motor off and on (delay? close?)
     // FIXME: pull this out to a read_disk function
     for (int cyl = 0; cyl < disk.num_phys_cyls; cyl++) {
@@ -583,6 +583,13 @@ static void process_floppy(void) {
                     // Maybe we guessed wrong. Probe and try again.
                     track->status = TRACK_UNKNOWN;
                 }
+
+                if (((try + 1) % args.recalibrate_tries) == 0) {
+                    // Seek back to track 0, in case the calibration has
+                    // drifted.
+                    struct floppy_raw_cmd cmd;
+                    fd_recalibrate(&cmd);
+                }
             }
 
             if (image != NULL) {
@@ -603,7 +610,8 @@ static void usage(void) {
     fprintf(stderr, "usage: dumpfloppy [OPTION]... [IMAGE-FILE]\n");
     fprintf(stderr, "  -a         probe each track before reading\n");
     fprintf(stderr, "  -A         don't re-probe on error\n");
-    fprintf(stderr, "  -r NUM     on failure, reread up to NUM times (default 10)\n");
+    fprintf(stderr, "  -r NUM     on failure, reread up to NUM times (default 16)\n");
+    fprintf(stderr, "  -R NUM     on failure, recalibrate every NUM tries (default 4)\n");
     fprintf(stderr, "  -d NUM     drive number to read from (default 0)\n");
     fprintf(stderr, "  -t TRACKS  drive has TRACKS tracks (default autodetect)\n");
     fprintf(stderr, "  -C         read comment from stdin\n");
@@ -615,7 +623,8 @@ int main(int argc, char **argv) {
     dev_fd = -1;
     args.always_probe = false;
     args.no_reprobe = false;
-    args.max_tries = 10;
+    args.max_tries = 16;
+    args.recalibrate_tries = 4;
     args.drive = 0;
     args.tracks = -1;
     args.cyl_scale = 1;
@@ -624,7 +633,7 @@ int main(int argc, char **argv) {
     args.image_filename = NULL;
 
     while (true) {
-        int opt = getopt(argc, argv, "aAr:d:t:CS:");
+        int opt = getopt(argc, argv, "aAr:R:d:t:CS:");
         if (opt == -1) break;
 
         switch (opt) {
@@ -636,6 +645,9 @@ int main(int argc, char **argv) {
             break;
         case 'r':
             args.max_tries = atoi(optarg);
+            break;
+        case 'R':
+            args.recalibrate_tries = atoi(optarg);
             break;
         case 'd':
             args.drive = atoi(optarg);

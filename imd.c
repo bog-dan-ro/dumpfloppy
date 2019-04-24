@@ -1,7 +1,7 @@
 /*
     imd.c: read and write ImageDisk .IMD files
 
-    Copyright (C) 2013 Adam Sampson <ats@offog.org>
+    Copyright (C) 2013, 2019 Adam Sampson <ats@offog.org>
 
     Permission to use, copy, modify, and/or distribute this software for
     any purpose with or without fee is hereby granted, provided that the
@@ -124,6 +124,7 @@ static bool read_imd_track(FILE *image, disk_t *disk) {
         sector->log_cyl = cyl_map[phys_sec];
         sector->log_head = head_map[phys_sec];
         sector->log_sector = sec_map[phys_sec];
+        sector->phys_sector = phys_sec;
         sector->deleted = false;
         sector->data = NULL;
 

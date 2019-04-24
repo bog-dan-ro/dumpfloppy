@@ -1,7 +1,7 @@
 /*
     disk.h: data structure representing an FM/MFM floppy disk
 
-    Copyright (C) 2013 Adam Sampson <ats@offog.org>
+    Copyright (C) 2013, 2019 Adam Sampson <ats@offog.org>
 
     Permission to use, copy, modify, and/or distribute this software for
     any purpose with or without fee is hereby granted, provided that the
@@ -67,6 +67,7 @@ typedef struct {
     uint8_t log_cyl;
     uint8_t log_head;
     uint8_t log_sector;
+    uint8_t phys_sector;
     bool deleted;
     uint8_t *data; // NULL if not read yet; allocate with malloc
 } sector_t;

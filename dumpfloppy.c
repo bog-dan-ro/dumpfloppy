@@ -201,6 +201,7 @@ static sector_t *track_readid(track_t *track) {
     sector->log_cyl = cmd.reply[3];
     sector->log_head = cmd.reply[4];
     sector->log_sector = cmd.reply[5];
+    sector->phys_sector = track->num_sectors;
 
     if (track->sector_size_code != -1
         && track->sector_size_code != cmd.reply[6]) {

@@ -1,7 +1,7 @@
 /*
     disk.c: data structure representing an FM/MFM floppy disk
 
-    Copyright (C) 2013 Adam Sampson <ats@offog.org>
+    Copyright (C) 2013, 2019 Adam Sampson <ats@offog.org>
 
     Permission to use, copy, modify, and/or distribute this software for
     any purpose with or without fee is hereby granted, provided that the
@@ -58,6 +58,7 @@ static const sector_t EMPTY_SECTOR = {
     .log_cyl = 0xFF,
     .log_head = 0xFF,
     .log_sector = 0xFF,
+    .phys_sector = 0xFF,
     .deleted = false,
     .data = NULL,
 };
@@ -157,6 +158,7 @@ void copy_track_layout(const disk_t *disk, const track_t *src, track_t *dest) {
         dest_sec->log_cyl = src_sec->log_cyl + cyl_diff;
         dest_sec->log_head = src_sec->log_head;
         dest_sec->log_sector = src_sec->log_sector;
+        dest_sec->phys_sector = src_sec->phys_sector;
     }
 }
 

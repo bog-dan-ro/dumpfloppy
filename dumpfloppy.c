@@ -513,7 +513,7 @@ static void process_floppy(void) {
 
     disk_t disk;
     init_disk(&disk);
-    make_disk_comment(PACKAGE_NAME, PACKAGE_VERSION, &disk);
+    make_disk_comment("dumpfloppy", "1", &disk);
 
     if (args.read_comment) {
         if (isatty(0)) {
